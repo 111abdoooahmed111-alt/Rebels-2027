@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>بوابة توزيع الفرق</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Barlow+Condensed:wght@600;700&display=swap');
+
+  :root{
+    --ink:#1B211D; --paper:#EFF1EA; --panel:#FFFFFF; --line:#D9DCD2; --muted:#666F5F;
+    --accent:#B8860B; --accent-ink:#7A5A08; --warn:#B8402E; --warn-bg:#FBEAE6; --ok:#3F7A4E;
+    --red:#D9483D; --blue:#2E6E9E; --green:#4C7A4E; --yellow:#C99A1E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  .app{ font-family:'Cairo',sans-serif; background:var(--paper); color:var(--ink); min-height:100vh; }
+  .num{ font-family:'Barlow Condensed',sans-serif; }
+  .hidden{ display:none !important; }
+  button{
+    font-family:'Cairo',sans-serif; font-weight:700; font-size:13px;
+    border:1px solid var(--ink); background:var(--ink); color:#fff;
+    padding:9px 14px; border-radius:2px; cursor:pointer;
+  }
+  button.secondary{ background:#fff; color:var(--ink); }
+  button.accent{ background:var(--accent); border-color:var(--accent-ink); }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
+  button:hover:not(:disabled){ filter:brightness(1.08); }
+  label{ display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+  input[type=text], input[type=number], textarea, select{
+    width:100%; font-family:'Cairo',sans-serif; font-size:14px;
+    border:1px solid var(--line); background:#fff; border-radius:2px; padding:9px 11px; color:var(--ink);
+  }
+  input:focus, textarea:focus, select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .fieldhint{ font-size:10.5px; color:var(--muted); margin-top:3px; }
+
+  /* ---- choice rows (Yes / To some extent / No) ---- */
+  .choicepick{ display:flex; gap:6px; margin-top:4px; }
+  .cbtn{ flex:1; padding:8px 4px; font-size:11px; border:1px solid var(--line); background:#fff;
+    border-radius:2px; cursor:pointer; color:var(--ink); text-align:center; font-family:'Cairo',sans-serif; }
+  .cbtn.sel{ background:var(--ink); color:#fff; border-color:var(--ink); }
+
+  /* ---- Role picker ---- */
+  .role-screen{ min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+  .role-screen h1{ font-size:26px; font-weight:800; margin:0 0 6px; text-align:center; }
+  .role-screen .sub{ color:var(--muted); font-size:14px; margin-bottom:34px; text-align:center; }
+  .role-cards{ display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .role-card{
+    width:230px; background:var(--panel); border:1px solid var(--line); border-radius:2px;
+    padding:26px 20px; text-align:center; cursor:pointer;
+  }
+  .role-card:hover{ border-color:var(--ink); }
+  .role-card .icon{ font-size:30px; margin-bottom:10px; }
+  .role-card .t{ font-weight:800; font-size:16px; margin-bottom:6px; }
+  .role-card .d{ font-size:12.5px; color:var(--muted); line-height:1.5; }
+
+  /* ---- Member view ---- */
+  .center-wrap{ max-width:460px; margin:0 auto; padding:32px 20px 60px; }
+  .backlink{ font-size:12px; color:var(--muted); cursor:pointer; display:inline-block; margin-bottom:18px; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:2px; padding:24px; }
+  .card h2{ font-size:18px; font-weight:800; margin:0 0 4px; }
+  .card .hint{ font-size:13px; color:var(--muted); margin-bottom:18px; }
+  .section-div{ border-top:1px solid var(--line); margin-top:18px; padding-top:14px; }
+  .colorpick{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:4px; }
+  .swatch{ padding:10px 8px; text-align:center; border-radius:2px; cursor:pointer; border:2px solid transparent; color:#fff; }
+  .swatch[data-c=Red]{background:var(--red);} .swatch[data-c=Blue]{background:var(--blue);}
+  .swatch[data-c=Green]{background:var(--green);} .swatch[data-c=Yellow]{background:var(--yellow); color:#332600;}
+  .swatch.sel{ border-color:var(--ink); }
+  .swatch .cname{ font-weight:800; font-size:13px; }
+  .swatch .cdesc{ font-size:10.5px; opacity:.9; margin-top:2px; }
+  .confirm{ text-align:center; padding:30px 10px; }
+  .confirm .check{ font-size:40px; color:var(--ok); margin-bottom:10px; }
+  .err{ font-size:12px; color:var(--warn); margin-top:6px; display:none; }
+  .err.show{ display:block; }
+
+  /* ---- Admin gate ---- */
+  .gate-card{ max-width:340px; margin:80px auto; background:var(--panel); border:1px solid var(--line); padding:24px; text-align:center; }
+
+  /* ---- Admin dashboard ---- */
+  .admin-wrap{ padding:24px; }
+  header.top{ display:flex; align-items:baseline; justify-content:space-between; border-bottom:3px solid var(--ink); padding-bottom:14px; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  header.top h1{ font-size:24px; font-weight:800; margin:0; }
+  header.top .stats{ display:flex; gap:20px; }
+  header.top .stat{ text-align:center; }
+  header.top .stat .n{ font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:700; line-height:1; }
+  header.top .stat .l{ font-size:10.5px; color:var(--muted); }
+  .synctag{ font-size:10.5px; color:var(--ok); }
+  .layout{ display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:start; }
+  @media (max-width:860px){ .layout{ grid-template-columns:1fr; } }
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:2px; padding:16px; }
+  .panel h2{ font-size:13px; font-weight:700; margin:0 0 10px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .roster-list{ margin-top:10px; max-height:280px; overflow:auto; border-top:1px solid var(--line); }
+  .roster-item{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); font-size:12px; }
+  .roster-item .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+  .roster-item .name{ flex:1; }
+  .roster-item .uni{ color:var(--muted); font-size:10.5px; }
+  .roster-item .x{ cursor:pointer; color:var(--warn); font-weight:700; padding:0 4px; }
+  .row{ display:flex; gap:8px; margin-top:10px; }
+  .row > button{ flex:1; }
+  .board-controls{ display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .teamcount{ display:flex; align-items:center; gap:8px; }
+  .teamcount input{ width:70px; text-align:center; }
+  .board{ display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); }
+  .team{ background:var(--panel); border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .team.unbalanced{ border-color:var(--warn); }
+  .team-head{ padding:12px 14px; border-bottom:1px solid var(--line); }
+  .team-head .tname{ font-weight:800; font-size:15px; }
+  .team-head .flag{ font-size:10.5px; color:var(--warn); font-weight:700; margin-top:2px; }
+  .breakdown{ display:flex; gap:10px; padding:9px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+  .chip{ font-size:10.5px; display:flex; align-items:center; gap:4px; color:var(--muted); }
+  .chip .sq{ width:9px; height:9px; border-radius:2px; }
+  .pcard{ display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid #F0F1EC; font-size:13px; }
+  .pcard:last-child{ border-bottom:none; }
+  .pcard .bar{ width:4px; align-self:stretch; border-radius:2px; flex:none; }
+  .pcard .info{ flex:1; }
+  .pcard .info .n{ font-weight:700; font-size:13px; }
+  .pcard .info .u{ color:var(--muted); font-size:10.5px; }
+  .pcard .skills{ display:flex; gap:3px; }
+  .pcard .skills span{ width:16px; height:16px; border-radius:2px; font-size:9px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line); color:var(--muted); font-weight:700; }
+  .pcard .skills span.full{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .pcard .skills span.some{ background:#fff; color:var(--ink); border-color:var(--ink); }
+  .empty{ padding:20px; text-align:center; color:var(--muted); font-size:13px; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
+    padding:9px 18px; border-radius:2px; font-size:13px; opacity:0; transition:opacity .25s; pointer-events:none; z-index:50; }
+  .toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ROLE PICKER -->
+  <div class="role-screen" id="view-role">
+    <h1>بوابة توزيع الفرق</h1>
+    <div class="sub">اختار دورك</div>
+    <div class="role-cards">
+      <div class="role-card" id="pickMember">
+        <div class="icon">📝</div>
+        <div class="t">أنا مشارك</div>
+        <div class="d">سجّل بياناتك ونتيجة Insights بتاعتك</div>
+      </div>
+      <div class="role-card" id="pickAdmin">
+        <div class="icon">📋</div>
+        <div class="t">أنا مسؤول</div>
+        <div class="d">شوف كل المسجلين ووزّعهم فرق</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER VIEW -->
+  <div class="center-wrap hidden" id="view-member">
+    <span class="backlink" data-back="role">‹ رجوع</span>
+    <div class="card" id="memberFormCard">
+      <h2>تسجيل بياناتك</h2>
+      <div class="hint">هيتم إرسالها للمسؤولين عن التوزيع</div>
+
+      <label>الاسم بالكامل (عربي)</label>
+      <input type="text" id="mName" placeholder="اسمك بالعربي">
+      <div class="fieldhint">اكتب بالعربي بس — أي حروف تانية هتتشال أوتوماتيك</div>
+
+      <label>الجامعة (English)</label>
+      <input type="text" id="mUni" placeholder="e.g. Helwan University" list="uniList">
+      <datalist id="uniList"></datalist>
+      <div class="fieldhint">English only — non-English characters will be removed automatically</div>
+
+      <label>السن</label>
+      <input type="number" id="mAge" min="15" max="60" placeholder="السن">
+
+      <label>الفرقة الدراسية</label>
+      <select id="mYear">
+        <option>Year 1</option><option>Year 2</option><option>Year 3</option>
+        <option>Year 4</option><option>Year 5</option>
+      </select>
+
+      <label>نتيجة Insights بتاعتك</label>
+      <div class="colorpick" id="mColorPick">
+        <div class="swatch" data-c="Red"><div class="cname">Red</div><div class="cdesc">عملي وحاسم</div></div>
+        <div class="swatch" data-c="Blue"><div class="cname">Blue</div><div class="cdesc">منظم ودقيق</div></div>
+        <div class="swatch" data-c="Green"><div class="cname">Green</div><div class="cdesc">هادئ ومتعاون</div></div>
+        <div class="swatch" data-c="Yellow"><div class="cname">Yellow</div><div class="cdesc">اجتماعي ومتحمس</div></div>
+      </div>
+
+      <div class="section-div">
+        <label style="margin-top:0">هل انت متمكن من الـ Canva؟</label>
+        <div class="choicepick" id="mCanva">
+          <button type="button" class="cbtn" data-v="Yes">Yes</button>
+          <button type="button" class="cbtn" data-v="To some extent">To some extent</button>
+          <button type="button" class="cbtn" data-v="No">No</button>
+        </div>
+
+        <label>هل عندك مهارة تصوير فوتوغرافي؟</label>
+        <div class="choicepick" id="mPhoto">
+          <button type="button" class="cbtn" data-v="Yes">Yes</button>
+          <button type="button" class="cbtn" data-v="To some extent">To some extent</button>
+          <button type="button" class="cbtn" data-v="No">No</button>
+        </div>
+
+        <label>هل عندك مهارة مونتاج فيديو؟</label>
+        <div class="choicepick" id="mVideo">
+          <button type="button" class="cbtn" data-v="Yes">Yes</button>
+          <button type="button" class="cbtn" data-v="To some extent">To some extent</button>
+          <button type="button" class="cbtn" data-v="No">No</button>
+        </div>
+      </div>
+
+      <div class="err" id="mErr">محتاج الاسم بالعربي والجامعة بالإنجليزي على الأقل</div>
+      <div class="row"><button class="accent" id="btnSubmitMember" style="flex:1">تسجيل</button></div>
+    </div>
+    <div class="card confirm hidden" id="memberConfirm">
+      <div class="check">✓</div>
+      <h2>تم التسجيل</h2>
+      <div class="hint">بياناتك اتضافت لقائمة المسؤولين</div>
+      <div class="row"><button class="secondary" id="btnAnother" style="flex:1">تسجيل شخص تاني</button></div>
+    </div>
+  </div>
+
+  <!-- ADMIN GATE -->
+  <div class="hidden" id="view-admin-gate">
+    <div class="gate-card">
+      <span class="backlink" data-back="role">‹ رجوع</span>
+      <h2 style="margin:6px 0 4px">دخول المسؤولين</h2>
+      <div class="hint" style="font-size:12.5px;color:var(--muted);margin-bottom:14px">اكتب كود الدخول اللي اتفقتوا عليه</div>
+      <input type="text" id="adminPin" placeholder="كود الدخول">
+      <div class="row"><button class="accent" id="btnAdminGo" style="flex:1">دخول</button></div>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD -->
+  <div class="admin-wrap hidden" id="view-admin">
+    <header class="top">
+      <div>
+        <span class="backlink" data-back="role">‹ رجوع</span>
+        <h1>لوحة المسؤولين</h1>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="n num" id="statTotal">0</div><div class="l">مشارك</div></div>
+        <div class="stat"><div class="n num" id="statUni">0</div><div class="l">جامعة</div></div>
+        <div class="stat"><div class="n num" id="statTeams">0</div><div class="l">فريق</div></div>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>إضافة يدوية</h2>
+        <label>الاسم (عربي)</label>
+        <input type="text" id="fName" placeholder="اسم المشارك بالعربي">
+        <label>الجامعة (English)</label>
+        <input type="text" id="fUni" placeholder="e.g. MUST">
+        <label>السن</label>
+        <input type="number" id="fAge" min="15" max="60" placeholder="السن">
+        <label>الفرقة الدراسية</label>
+        <select id="fYear">
+          <option>Year 1</option><option>Year 2</option><option>Year 3</option>
+          <option>Year 4</option><option>Year 5</option>
+        </select>
+        <label>لون Insights</label>
+        <div class="colorpick" id="colorPick" style="grid-template-columns:1fr 1fr 1fr 1fr">
+          <div class="swatch" data-c="Red"><div class="cname">Red</div></div>
+          <div class="swatch" data-c="Blue"><div class="cname">Blue</div></div>
+          <div class="swatch" data-c="Green"><div class="cname">Green</div></div>
+          <div class="swatch" data-c="Yellow"><div class="cname">Yellow</div></div>
+        </div>
+        <label>Canva</label>
+        <div class="choicepick" id="aCanva">
+          <button type="button" class="cbtn" data-v="Yes">Yes</button>
+          <button type="button" class="cbtn" data-v="To some extent">To some extent</button>
+          <button type="button" class="cbtn" data-v="No">No</button>
+        </div>
+        <label>Photography</label>
+        <div class="choicepick" id="aPhoto">
+          <button type="button" class="cbtn" data-v="Yes">Yes</button>
+          <button type="button" class="cbtn" data-v="To some extent">To some extent</button>
+          <button type="button" class="cbtn" data-v="No">No</button>
+        </div>
+        <label>Video editing</label>
+        <div class="choicepick" id="aVideo">
+          <button type="button" class="cbtn" data-v="Yes">Yes</button>
+          <button type="button" class="cbtn" data-v="To some extent">To some extent</button>
+          <button type="button" class="cbtn" data-v="No">No</button>
+        </div>
+        <div class="row"><button class="accent" id="btnAdd" style="flex:1">إضافة</button></div>
+
+        <h2 style="margin-top:18px">استيراد سطور</h2>
+        <label>Name(AR), University(EN), Age, Year, Color, Canva, Photography, Video — سطر لكل واحد</label>
+        <textarea id="bulkText" placeholder="أحمد علي, Cairo University, 20, Year 2, Red, Yes, No, To some extent"></textarea>
+        <div class="row"><button class="secondary" id="btnBulk" style="flex:1">استيراد</button></div>
+
+        <div class="row">
+          <button class="secondary" id="btnRefresh">تحديث القائمة</button>
+          <button class="secondary" id="btnExport">تصدير CSV</button>
+        </div>
+        <div class="row"><button class="secondary" id="btnClear" style="flex:1">مسح الكل</button></div>
+
+        <h2 style="margin-top:18px">القائمة (<span id="rosterCount">0</span>) <span class="synctag" id="syncTag"></span></h2>
+        <div class="roster-list" id="rosterList"></div>
+      </div>
+
+      <div>
+        <div class="board-controls panel">
+          <div class="teamcount">
+            <label style="margin:0">عدد الفرق</label>
+            <input type="number" id="teamCount" min="2" max="30" value="5">
+          </div>
+          <button class="accent" id="btnDistribute">وزّع الفرق</button>
+          <div style="flex:1"></div>
+          <span style="font-size:11px;color:var(--muted)" id="saveStatus"></span>
+        </div>
+        <div class="board" id="board"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = {Red:'var(--red)', Blue:'var(--blue)', Green:'var(--green)', Yellow:'var(--yellow)'};
+const ADMIN_PIN = 'SCOPES2026'; // غيّره من هنا لو عايز كود مختلف
+const POLL_MS = 8000; // معدل تحديث لوحة المسؤولين أوتوماتيك
+
+let participants = [];
+let teamCount = 5;
+let teams = null;
+let selMemberColor = 'Red';
+let selAdminColor = 'Red';
+let adminPollId = null;
+const choiceState = {}; // e.g. choiceState.mCanva = 'No'
+
+const $ = id => document.getElementById(id);
+function uid(){ return 'p'+Date.now()+Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* ---------- input validation filters ---------- */
+function filterArabic(v){ return v.replace(/[^\u0600-\u06FF\s]/g, ''); }
+function filterEnglish(v){ return v.replace(/[^A-Za-z0-9\s\-\.,'&]/g, ''); }
+function attachFilter(inputId, fn){
+  const el = $(inputId);
+  el.addEventListener('input', ()=>{
+    const pos = el.selectionStart;
+    const before = el.value.length;
+    el.value = fn(el.value);
+    const after = el.value.length;
+    try{ el.setSelectionRange(Math.max(0,pos-(before-after)), Math.max(0,pos-(before-after))); }catch(e){}
+  });
+}
+attachFilter('mName', filterArabic);
+attachFilter('mUni', filterEnglish);
+attachFilter('fName', filterArabic);
+attachFilter('fUni', filterEnglish);
+
+/* ---------- choice row (Yes / To some extent / No) ---------- */
+function initChoice(containerId, def){
+  choiceState[containerId] = def;
+  const el = $(containerId);
+  el.querySelectorAll('.cbtn').forEach(b=>{
+    if(b.dataset.v === def) b.classList.add('sel');
+    b.addEventListener('click', ()=>{
+      choiceState[containerId] = b.dataset.v;
+      el.querySelectorAll('.cbtn').forEach(x=>x.classList.toggle('sel', x===b));
+    });
+  });
+}
+['mCanva','mPhoto','mVideo','aCanva','aPhoto','aVideo'].forEach(id=> initChoice(id, 'No'));
+
+function resetChoices(prefix){
+  ['Canva','Photo','Video'].forEach(k=>{
+    const id = prefix+k;
+    choiceState[id] = 'No';
+    $(id).querySelectorAll('.cbtn').forEach(b=> b.classList.toggle('sel', b.dataset.v==='No'));
+  });
+}
+
+/* ---------- view routing ---------- */
+function showView(name){
+  ['role','member','admin-gate','admin'].forEach(v=>{
+    $('view-'+v).classList.toggle('hidden', v!==name);
+  });
+  if(adminPollId){ clearInterval(adminPollId); adminPollId = null; }
+  if(name === 'member'){
+    $('memberFormCard').classList.remove('hidden');
+    $('memberConfirm').classList.add('hidden');
+    loadUniListForMember();
+  }
+  if(name === 'admin'){
+    loadAdminData();
+    adminPollId = setInterval(pollParticipants, POLL_MS);
+  }
+}
+document.querySelectorAll('[data-back]').forEach(el=>{
+  el.addEventListener('click', ()=> showView(el.dataset.back));
+});
+$('pickMember').addEventListener('click', ()=> showView('member'));
+$('pickAdmin').addEventListener('click', ()=> showView('admin-gate'));
+
+/* ---------- shared storage helpers ---------- */
+async function fetchParticipants(){
+  try{
+    const res = await window.storage.get('portal-participants', true);
+    return res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveParticipants(list){
+  await window.storage.set('portal-participants', JSON.stringify(list), true);
+}
+async function fetchDistribution(){
+  try{
+    const res = await window.storage.get('portal-distribution', true);
+    return res && res.value ? JSON.parse(res.value) : null;
+  }catch(e){ return null; }
+}
+async function saveDistribution(data){
+  await window.storage.set('portal-distribution', JSON.stringify(data), true);
+}
+
+/* ---------- MEMBER FLOW ---------- */
+async function loadUniListForMember(){
+  const list = await fetchParticipants();
+  const unis = [...new Set(list.map(p=>p.university))];
+  $('uniList').innerHTML = unis.map(u=>`<option value="${escapeHtml(u)}">`).join('');
+}
+$('mColorPick').addEventListener('click', e=>{
+  const sw = e.target.closest('.swatch'); if(!sw) return;
+  selMemberColor = sw.dataset.c;
+  $('mColorPick').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel', s===sw));
+});
+$('mColorPick').querySelector('.swatch[data-c=Red]').classList.add('sel');
+
+$('btnSubmitMember').addEventListener('click', async ()=>{
+  const name = $('mName').value.trim();
+  const uni = $('mUni').value.trim();
+  const age = $('mAge').value;
+  const year = $('mYear').value;
+  if(!name || !uni){ $('mErr').classList.add('show'); toast('محتاج الاسم بالعربي والجامعة بالإنجليزي'); return; }
+  $('mErr').classList.remove('show');
+  $('btnSubmitMember').disabled = true;
+  $('btnSubmitMember').textContent = 'بيسجل...';
+  try{
+    const list = await fetchParticipants();
+    list.push({
+      id: uid(), name, university: uni, age: age?Number(age):null, year, color: selMemberColor,
+      canva: choiceState.mCanva, photography: choiceState.mPhoto, video: choiceState.mVideo
+    });
+    await saveParticipants(list);
+    $('memberFormCard').classList.add('hidden');
+    $('memberConfirm').classList.remove('hidden');
+  }catch(e){
+    toast('حصل خطأ، جرب تاني');
+  }
+  $('btnSubmitMember').disabled = false;
+  $('btnSubmitMember').textContent = 'تسجيل';
+});
+$('btnAnother').addEventListener('click', ()=>{
+  $('mName').value=''; $('mUni').value=''; $('mAge').value=''; $('mYear').value='Year 1';
+  selMemberColor='Red';
+  $('mColorPick').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel', s.dataset.c==='Red'));
+  resetChoices('m');
+  $('memberFormCard').classList.remove('hidden');
+  $('memberConfirm').classList.add('hidden');
+  loadUniListForMember();
+});
+
+/* ---------- ADMIN GATE ---------- */
+$('btnAdminGo').addEventListener('click', ()=>{
+  if($('adminPin').value.trim() === ADMIN_PIN){
+    $('adminPin').value = '';
+    showView('admin');
+  } else {
+    toast('كود غلط');
+  }
+});
+$('adminPin').addEventListener('keydown', e=>{ if(e.key==='Enter') $('btnAdminGo').click(); });
+
+/* ---------- ADMIN FLOW ---------- */
+$('colorPick').addEventListener('click', e=>{
+  const sw = e.target.closest('.swatch'); if(!sw) return;
+  selAdminColor = sw.dataset.c;
+  $('colorPick').querySelectorAll('.swatch').forEach(s=>s.classList.toggle('sel', s===sw));
+});
+$('colorPick').querySelector('.swatch[data-c=Red]').classList.add('sel');
+
+async function loadAdminData(){
+  $('saveStatus').textContent = 'بيحمّل...';
+  participants = await fetchParticipants();
+  const dist = await fetchDistribution();
+  if(dist){ teamCount = dist.teamCount; teams = dist.teams; $('teamCount').value = teamCount; }
+  $('saveStatus').textContent = '';
+  render();
+}
+
+// auto refresh: pulls new registrants without disturbing an already-computed board
+async function pollParticipants(){
+  const fresh = await fetchParticipants();
+  if(fresh.length !== participants.length){
+    participants = fresh;
+    $('syncTag').textContent = 'اتحدثت الآن ●';
+    setTimeout(()=>{ $('syncTag').textContent=''; }, 3000);
+    render();
+  }
+}
+
+$('btnRefresh').addEventListener('click', loadAdminData);
+
+$('btnAdd').addEventListener('click', async ()=>{
+  const name = $('fName').value.trim();
+  const uni = $('fUni').value.trim();
+  const age = $('fAge').value;
+  const year = $('fYear').value;
+  if(!name || !uni){ toast('محتاج الاسم بالعربي والجامعة بالإنجليزي'); return; }
+  participants.push({
+    id: uid(), name, university: uni, age: age?Number(age):null, year, color: selAdminColor,
+    canva: choiceState.aCanva, photography: choiceState.aPhoto, video: choiceState.aVideo
+  });
+  await saveParticipants(participants);
+  $('fName').value=''; $('fUni').value=''; $('fAge').value=''; $('fYear').value='Year 1';
+  resetChoices('a');
+  teams = null;
+  render();
+});
+
+$('btnBulk').addEventListener('click', async ()=>{
+  const lines = $('bulkText').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added = 0;
+  lines.forEach(line=>{
+    const parts = line.split(',').map(p=>p.trim());
+    let [name, uni, age, year, color, canva, photo, video] = parts;
+    name = filterArabic(name||'').trim();
+    uni = filterEnglish(uni||'').trim();
+    if(!name || !uni) return;
+    year = /^Year [1-5]$/.test(year) ? year : 'Year 1';
+    color = ['Red','Blue','Green','Yellow'].includes(color) ? color : 'Red';
+    const norm = v => ['Yes','To some extent','No'].includes(v) ? v : 'No';
+    participants.push({
+      id: uid(), name, university: uni, age: age?Number(age):null, year, color,
+      canva: norm(canva), photography: norm(photo), video: norm(video)
+    });
+    added++;
+  });
+  if(added){
+    await saveParticipants(participants);
+    $('bulkText').value=''; teams=null; render(); toast(added+' اتضافوا');
+  }
+});
+
+$('btnClear').addEventListener('click', async ()=>{
+  if(!confirm('هتمسح كل المشاركين والتوزيع لكل المسؤولين، متأكد؟')) return;
+  participants = []; teams = null;
+  await saveParticipants(participants);
+  await saveDistribution({teamCount, teams: null});
+  render();
+});
+
+$('btnExport').addEventListener('click', ()=>{
+  if(!teams){ toast('وزّع الفرق الأول'); return; }
+  let csv = 'Team,Name,University,Age,Year,Insights Color,Canva,Photography,Video Editing\n';
+  teams.forEach((team,i)=> team.forEach(p=>{
+    csv += `Team ${i+1},"${p.name}","${p.university}",${p.age||''},${p.year||''},${p.color},${p.canva},${p.photography},${p.video}\n`;
+  }));
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'team-distribution.csv';
+  a.click();
+});
+
+$('btnDistribute').addEventListener('click', async ()=>{
+  const n = Math.max(2, Math.min(30, Number($('teamCount').value) || 5));
+  teamCount = n;
+  if(participants.length < n){ toast('عدد المشاركين أقل من عدد الفرق'); }
+  teams = distribute(participants, n);
+  await saveDistribution({teamCount, teams});
+  render();
+});
+
+/* Balanced distribution: university first, then academic year, then Insights color,
+   then raw team size — in that priority order, so no single team gets stacked
+   with one university or one academic year. */
+function distribute(list, numTeams){
+  const result = Array.from({length:numTeams}, ()=>[]);
+  const uniCounts = Array.from({length:numTeams}, ()=>({}));
+  const yearCounts = Array.from({length:numTeams}, ()=>({}));
+  const colorCounts = Array.from({length:numTeams}, ()=>({}));
+
+  // process largest university groups first — this is what forces early
+  // spread instead of letting a big university fill teams 1,2,3 before others get a turn
+  const byUni = {};
+  list.forEach(p=>{ (byUni[p.university] = byUni[p.university] || []).push(p); });
+  const groups = Object.values(byUni).sort((a,b)=> b.length - a.length);
+  const order = [].concat(...groups);
+
+  order.forEach(p=>{
+    let best=0, bestScore=null;
+    for(let t=0;t<numTeams;t++){
+      const uc = uniCounts[t][p.university]||0;
+      const yc = yearCounts[t][p.year]||0;
+      const cc = colorCounts[t][p.color]||0;
+      const size = result[t].length;
+      const score = uc*1000000 + yc*10000 + cc*100 + size;
+      if(bestScore===null || score<bestScore){ bestScore=score; best=t; }
+    }
+    result[best].push(p);
+    uniCounts[best][p.university]=(uniCounts[best][p.university]||0)+1;
+    yearCounts[best][p.year]=(yearCounts[best][p.year]||0)+1;
+    colorCounts[best][p.color]=(colorCounts[best][p.color]||0)+1;
+  });
+  return result;
+}
+
+function imbalanceFlags(team){
+  if(team.length < 3) return [];
+  const flags = [];
+  const uc = {}; team.forEach(p=> uc[p.university]=(uc[p.university]||0)+1);
+  if(Math.max(...Object.values(uc))/team.length > 0.5) flags.push('⚠ تركّز واضح من جامعة واحدة');
+  const yc = {}; team.forEach(p=> yc[p.year]=(yc[p.year]||0)+1);
+  if(Math.max(...Object.values(yc))/team.length > 0.6) flags.push('⚠ تركّز واضح من فرقة دراسية واحدة');
+  return flags;
+}
+
+async function removeParticipant(id){
+  participants = participants.filter(p=>p.id!==id);
+  await saveParticipants(participants);
+  teams = null;
+  render();
+}
+
+function skillBadge(level, letter){
+  const cls = level==='Yes' ? 'full' : (level==='To some extent' ? 'some' : '');
+  return `<span class="${cls}" title="${letter}: ${level}">${letter}</span>`;
+}
+
+function render(){
+  $('statTotal').textContent = participants.length;
+  $('statUni').textContent = new Set(participants.map(p=>p.university)).size;
+  $('statTeams').textContent = teams ? teams.length : 0;
+  $('rosterCount').textContent = participants.length;
+
+  const rl = $('rosterList');
+  rl.innerHTML = participants.length===0
+    ? '<div class="empty">لسه مفيش مشاركين</div>'
+    : participants.map(p=>`
+      <div class="roster-item">
+        <span class="dot" style="background:${COLORS[p.color]}"></span>
+        <span class="name">${escapeHtml(p.name)}</span>
+        <span class="uni">${escapeHtml(p.university)} · ${p.year||''}</span>
+        <span class="x" data-id="${p.id}">✕</span>
+      </div>`).join('');
+  rl.querySelectorAll('.x').forEach(x=> x.addEventListener('click', ()=> removeParticipant(x.dataset.id)));
+
+  const board = $('board');
+  if(!teams){
+    board.innerHTML = '<div class="empty" style="grid-column:1/-1">دوس "وزّع الفرق" علشان تشوف التوزيع هنا</div>';
+    return;
+  }
+  board.innerHTML = teams.map((team,i)=>{
+    const uniCounts={}, colorCounts={};
+    team.forEach(p=>{ uniCounts[p.university]=(uniCounts[p.university]||0)+1; colorCounts[p.color]=(colorCounts[p.color]||0)+1; });
+    const flags = imbalanceFlags(team);
+    const uniChips = Object.entries(uniCounts).map(([u,c])=>`<span class="chip"><span class="sq" style="background:var(--ink);opacity:.55"></span>${escapeHtml(u)} ${c}</span>`).join('');
+    const colorChips = ['Red','Blue','Green','Yellow'].filter(c=>colorCounts[c]).map(c=>`<span class="chip"><span class="sq" style="background:${COLORS[c]}"></span>${c} ${colorCounts[c]}</span>`).join('');
+    const cards = team.map(p=>`
+      <div class="pcard">
+        <span class="bar" style="background:${COLORS[p.color]}"></span>
+        <div class="info"><div class="n">${escapeHtml(p.name)}</div><div class="u">${escapeHtml(p.university)} · ${p.year||''}${p.age?' · '+p.age+' سنة':''}</div></div>
+        <div class="skills">${skillBadge(p.canva,'C')}${skillBadge(p.photography,'P')}${skillBadge(p.video,'V')}</div>
+      </div>`).join('');
+    return `
+      <div class="team ${flags.length?'unbalanced':''}">
+        <div class="team-head">
+          <div class="tname">فريق ${i+1} <span style="color:var(--muted);font-weight:400">(${team.length})</span></div>
+          ${flags.map(f=>`<div class="flag">${f}</div>`).join('')}
+        </div>
+        <div class="breakdown">${uniChips}</div>
+        <div class="breakdown">${colorChips}</div>
+        <div>${cards || '<div class="empty">فاضي</div>'}</div>
+      </div>`;
+  }).join('');
+}
+
+showView('role');
+</script>
+</body>
+</html>
